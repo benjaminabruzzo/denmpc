@@ -34,13 +34,22 @@ ros::init(argc, argv, "controller");
 	//Initialize: Ardrone instance: ardrone1
 	Ardrone_20170227* ardrone0=new Ardrone_20170227(agentlist.size());
 
-	double ardrone0_init_p[]={ //without tracking position
-			-0.5092,1.458,-1,1,-5,1.3, //Model Parameters: Ardrone
-			0.0,0.0,0.0, 0.0,0.0, 0.0,0.0,0.0,0.0, //State Penalty: no tracking
-			1.0,1.0,0.3,1.0 //Input penalty
-	};
-	double ardrone0_init_x[]=   {0,0,2, 1,0, 0.0,0.0,0.0,0.0};
-	double ardrone0_init_xdes[]={0,0,2, 1,0, 0.0,0.0,0.0,0.0};
+	/* Agent parameters:
+	 * {  	lateralA,lateralB,
+	 *		verticalA,verticalB,
+	 *		orientationalA,orientationalB,
+	 *    	qposlat,qposlat,qposvert,
+	 *		qposorient,qposorient,
+	 *		qvlat,qvlat,qvvert,qvorient,
+	 *    	ruvlat,ruvlat,ruvver,ruorient
+	 *  } dim[19]
+	*/
+
+	std::vector<double> ardrone0_init_x, ardrone0_init_xdes, ardrone0_init_p;
+	ros::param::get("~ardrone0_init/x", ardrone0_init_x);
+	ros::param::get("~ardrone0_init/xdes", ardrone0_init_xdes);
+	ros::param::get("~ardrone0_init/p", ardrone0_init_p);
+
 	ardrone0->setInitialState(ardrone0_init_x);
 	ardrone0->setInitialDesiredState(ardrone0_init_xdes);
 	ardrone0->setInitialParameter(ardrone0_init_p);
@@ -55,13 +64,9 @@ ros::init(argc, argv, "controller");
 	ROS_INFO("ardrone_desiredpose_topic: %s", s_ardrone_desiredpose_topic.c_str());
 	ROS_INFO("ardrone_ctrl_ch_topic: %s", s_ardrone_ctrl_ch_topic.c_str());
 
-	ardrone0->setStateSubscriberRosTopicName       (s_ardrone_pose_topic.c_str());
-	ardrone0->setDesiredStateSubscriberRosTopicName(s_ardrone_desiredpose_topic.c_str());
-	ardrone0->setPublisherRosTopicName             (s_ardrone_ctrl_ch_topic.c_str());
-	// ardrone0->setStateSubscriberRosTopicName       ("/vrpn_client_node/Ardrone/pose");
-	// ardrone0->setDesiredStateSubscriberRosTopicName("/usma_ardrone/mpc/desiredpose");
-	// ardrone0->setPublisherRosTopicName             ("/usma_ardrone/mpc/cmd_vel");
-
+	ardrone0->setStateSubscriberRosTopicName       (s_ardrone_pose_topic);
+	ardrone0->setDesiredStateSubscriberRosTopicName(s_ardrone_desiredpose_topic);
+	ardrone0->setPublisherRosTopicName             (s_ardrone_ctrl_ch_topic);
 	agentlist.push_back(ardrone0); /*add to agentlist*/
 
 	//AddConstraint
@@ -69,7 +74,9 @@ ros::init(argc, argv, "controller");
 	Constraint* constraint= new OrientationConstraint_20170227(ardrone0);
 
 	//constraint_init_p{k0, ds, beta, ddist, kforw, kside, kup}
-	double constraint0_init_p[]={1,0.17,0.5,1.5,1,1,1};
+	// double constraint0_init_p[]={1,0.17,0.5,1.5,1,1,1};
+	std::vector<double> constraint0_init_p;
+	ros::param::get("~constraint0_init/p", constraint0_init_p);
 	constraint->setInitialParameter(constraint0_init_p);
 	constraint->setParameter(constraint0_init_p);
 
@@ -77,6 +84,13 @@ ros::init(argc, argv, "controller");
 	std::vector<Controller*> controllerlist;
 
 	//Initialize: Controller
+	double HorizonDiskretization, HorizonLength, Tolerance, UpdateIntervall, MaximumNumberofIterations;
+	ros::param::get("~HorizonDiskretization", HorizonDiskretization);
+	ros::param::get("~HorizonLength", HorizonLength);
+	ros::param::get("~Tolerance", Tolerance);
+	ros::param::get("~UpdateIntervall", UpdateIntervall);
+	ros::param::get("~MaximumNumberofIterations", MaximumNumberofIterations);
+
 	Cmscgmres* controller1=new Cmscgmres(agentlist,controllerlist.size());
 	// controller1->setHorizonDiskretization(10);
 	// controller1->setHorizonLength(1);
@@ -87,6 +101,9 @@ ros::init(argc, argv, "controller");
 	// controller1->activateInfo_Controller();
 	// controller1->startLogging2File();
 	controller1->activateInfo_ControllerStates();
+	//	controller1->activateInfo_ControllerTrace();
+	//	controller1->activateInfo_Controller();
+	//	controller1->startLogging2File();
 	controllerlist.push_back(controller1);
 
 
