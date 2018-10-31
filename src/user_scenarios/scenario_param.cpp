@@ -45,10 +45,40 @@ ros::init(argc, argv, "controller");
 	 *  } dim[19]
 	*/
 
-	std::vector<double> ardrone0_init_x, ardrone0_init_xdes, ardrone0_init_p;
+	std::vector<double> ardrone0_init_x, ardrone0_init_xdes; //, ardrone0_init_p;
 	ros::param::get("~ardrone0_init/x", ardrone0_init_x);
 	ros::param::get("~ardrone0_init/xdes", ardrone0_init_xdes);
-	ros::param::get("~ardrone0_init/p", ardrone0_init_p);
+	// ros::param::get("~ardrone0_init/p", ardrone0_init_p);
+
+	double af, bf, az, bz, aphi, bphi;
+	ros::param::get("~ardrone0_init/model/af", af);
+	ros::param::get("~ardrone0_init/model/bf", bf);
+	ros::param::get("~ardrone0_init/model/az", az);
+	ros::param::get("~ardrone0_init/model/bz", bz);
+	ros::param::get("~ardrone0_init/model/aphi", aphi);
+	ros::param::get("~ardrone0_init/model/bphi", bphi);
+
+	double Qx, Qy, Qz, Qphi, Qvf, Qvs, Qvz, Qvphi;
+	ros::param::get("~ardrone0_init/Q/x", Qx);
+	ros::param::get("~ardrone0_init/Q/y", Qy);
+	ros::param::get("~ardrone0_init/Q/z", Qz);
+	ros::param::get("~ardrone0_init/Q/phi", Qphi);
+	ros::param::get("~ardrone0_init/Q/vx", Qvf);
+	ros::param::get("~ardrone0_init/Q/vy", Qvs);
+	ros::param::get("~ardrone0_init/Q/vz", Qvz);
+	ros::param::get("~ardrone0_init/Q/vphi", Qvphi);
+
+	double Rux, Ruy, Ruz, Ruphi;
+	ros::param::get("~ardrone0_init/R/ux", Rux);
+	ros::param::get("~ardrone0_init/R/uy", Ruy);
+	ros::param::get("~ardrone0_init/R/uz", Ruz);
+	ros::param::get("~ardrone0_init/R/uphi", Ruphi);
+
+	double ardrone0_init_p[]={af, bf, az, bz, aphi, bphi, // Model Parameters: Ardrone
+			Qx, Qy, Qz, Qphi, Qphi, Qvf, Qvs, Qvz, Qvphi, // State Penalty:
+			Rux, Ruy, Ruz, Ruphi //Input penalty
+	};
+
 
 	ardrone0->setInitialState(ardrone0_init_x);
 	ardrone0->setInitialDesiredState(ardrone0_init_xdes);
